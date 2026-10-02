@@ -301,7 +301,13 @@ def notion_to_calendar_event(notion_item):
     
     if client_prop and client_prop.get("type") == "relation" and client_prop.get("relation"):
         client_page_id = client_prop["relation"][0]["id"]
-        client_page = notion.pages.retrieve(page_id=client_page_id)
+        client_page = requests.get(
+    f"https://api.notion.com/v1/pages/{client_page_id}",
+    headers={
+        "Authorization": f"Bearer {NOTION_TOKEN}",
+        "Notion-Version": "2022-06-28"
+    }
+).json()
 
         for prop in client_page["properties"].values():
             if prop.get("type") == "title" and prop.get("title"):
@@ -321,7 +327,13 @@ def notion_to_calendar_event(notion_item):
                 for item in rollup.get("array", []):
                     if item.get("type") == "relation" and item.get("relation"):
                         client_page_id = item["relation"][0]["id"]
-                        client_page = notion.pages.retrieve(page_id=client_page_id)
+                        client_page = requests.get(
+    f"https://api.notion.com/v1/pages/{client_page_id}",
+    headers={
+        "Authorization": f"Bearer {NOTION_TOKEN}",
+        "Notion-Version": "2022-06-28"
+    }
+).json()
 
                         for prop in client_page["properties"].values():
                             if prop.get("type") == "title" and prop.get("title"):
