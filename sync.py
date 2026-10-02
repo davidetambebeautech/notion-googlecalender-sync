@@ -292,10 +292,24 @@ def notion_to_calendar_event(notion_item):
     start_date = datetime.fromisoformat(start_time.replace("Z", "+00:00")).date()
     if start_date < datetime.now().date():
         return None
+        # Get client name from Notion relation
+    client_name = ""
+    client_prop = properties.get("Cliente")
+
+    if client_prop and client_prop.get("type") == "relation" and client_prop.get("relation"):
+        client_page_id = client_prop["relation"][0]["id"]
+        client_page = notion.pages.retrieve(page_id=client_page_id)
+
+        for prop in client_page["properties"].values():
+            if prop.get("type") == "title" and prop.get("title"):
+                client_name = "".join(
+                    part.get("plain_text", "") for part in prop["title"]
+                )
+                break
     # Build calendar event
     event = {
         'summary': title,
-        'description': f"Synced from Notion: {notion_item['url']}",
+        'description': f"Cliente: {client_name}\n\nNotion: {notion_item['url']}",
     }
 
     if is_all_day:
