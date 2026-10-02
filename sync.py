@@ -297,7 +297,8 @@ def notion_to_calendar_event(notion_item):
 
     # 1. Direct Cliente relation
     client_prop = properties.get("Cliente")
-print(f"DEBUG Cliente property: {client_prop}")
+    print(f"DEBUG Cliente property: {client_prop}")
+    
     if client_prop and client_prop.get("type") == "relation" and client_prop.get("relation"):
         client_page_id = client_prop["relation"][0]["id"]
         client_page = notion.pages.retrieve(page_id=client_page_id)
