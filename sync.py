@@ -288,7 +288,10 @@ def notion_to_calendar_event(notion_item):
 
     if not start_time:
         return None
-
+# Sync only today and future activities
+    start_date = datetime.fromisoformat(start_time.replace("Z", "+00:00")).date()
+    if start_date < datetime.now().date():
+        return None
     # Build calendar event
     event = {
         'summary': title,
@@ -553,14 +556,11 @@ def main():
     # manual edits in Google Calendar win over older Notion values.
     notion_items = get_notion_items()
     print(f"📋 Found {len(notion_items)} Notion items")
-    c2n_created, c2n_updated, c2n_deleted = sync_calendar_to_notion(
-        service, notion_items
-    )
+    
 
     # Re-fetch Notion after Calendar → Notion sync so we use the
     # latest values (including any updates that came from Calendar)
-    notion_items = get_notion_items()
-    print(f"📋 Found {len(notion_items)} Notion items after Calendar → Notion sync")
+    
     notion_ids = set(item['id'] for item in notion_items)
 
     # Then sync Notion → Google Calendar using the refreshed data
@@ -569,7 +569,7 @@ def main():
     )
 
     print(f"""
-🎉 2-Way Sync Complete!
+🎉 Notion → Google Calendar Sync Complete!
 
 Notion → Calendar:
   Created: {n2c_created}
@@ -577,10 +577,7 @@ Notion → Calendar:
   Skipped: {n2c_skipped}
   Deleted: {n2c_deleted}
 
-Calendar → Notion:
-  Created: {c2n_created}
-  Updated: {c2n_updated}
-  Deleted: {c2n_deleted}
+
 """)
 
 
