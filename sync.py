@@ -292,14 +292,26 @@ def notion_to_calendar_event(notion_item):
     start_date = datetime.fromisoformat(start_time.replace("Z", "+00:00")).date()
     if start_date < datetime.now().date():
         return None
-# Get client name from "Cliente visualizzato" formula
+# Get client name
     client_name = ""
-    client_prop = properties.get("Cliente visualizzato")
 
-    if client_prop and client_prop.get("type") == "formula":
-        formula = client_prop.get("formula", {})
-        if formula.get("type") == "string":
-            client_name = formula.get("string") or ""
+    # First try the direct Cliente relation
+    client_prop = properties.get("Cliente")
+
+    # If empty, try Cliente appuntamento
+    if not client_prop or not client_prop.get("relation"):
+        client_prop = properties.get("Cliente appuntamento")
+
+    if client_prop and client_prop.get("type") == "relation" and client_prop.get("relation"):
+        client_page_id = client_prop["relation"][0]["id"]
+        client_page = notion.pages.retrieve(page_id=client_page_id)
+
+        for prop in client_page["properties"].values():
+            if prop.get("type") == "title" and prop.get("title"):
+                client_name = "".join(
+                    part.get("plain_text", "") for part in prop["title"]
+                )
+                break
     # Build calendar event
     event = {
         'summary': title,
