@@ -292,16 +292,12 @@ def notion_to_calendar_event(notion_item):
     start_date = datetime.fromisoformat(start_time.replace("Z", "+00:00")).date()
     if start_date < datetime.now().date():
         return None
-# Get client name
+# Get client name: direct Cliente first, otherwise Cliente appuntamento rollup
     client_name = ""
 
-    # First try the direct Cliente relation
+    # 1. Direct Cliente relation
     client_prop = properties.get("Cliente")
-
-    # If empty, try Cliente appuntamento
-    if not client_prop or not client_prop.get("relation"):
-        client_prop = properties.get("Cliente appuntamento")
-
+print(f"DEBUG Cliente property: {client_prop}")
     if client_prop and client_prop.get("type") == "relation" and client_prop.get("relation"):
         client_page_id = client_prop["relation"][0]["id"]
         client_page = notion.pages.retrieve(page_id=client_page_id)
@@ -312,6 +308,28 @@ def notion_to_calendar_event(notion_item):
                     part.get("plain_text", "") for part in prop["title"]
                 )
                 break
+
+    # 2. If Cliente is empty, try Cliente appuntamento rollup
+    if not client_name:
+        rollup_prop = properties.get("Cliente appuntamento")
+
+        if rollup_prop and rollup_prop.get("type") == "rollup":
+            rollup = rollup_prop.get("rollup", {})
+
+            if rollup.get("type") == "array":
+                for item in rollup.get("array", []):
+                    if item.get("type") == "relation" and item.get("relation"):
+                        client_page_id = item["relation"][0]["id"]
+                        client_page = notion.pages.retrieve(page_id=client_page_id)
+
+                        for prop in client_page["properties"].values():
+                            if prop.get("type") == "title" and prop.get("title"):
+                                client_name = "".join(
+                                    part.get("plain_text", "") for part in prop["title"]
+                                )
+                                break
+                        if client_name:
+                            break
     # Build calendar event
     event = {
         'summary': title,
